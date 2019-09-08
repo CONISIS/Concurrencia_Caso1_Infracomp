@@ -2,11 +2,14 @@
 public class Servidor extends Thread{
 	
 	Buffer buff;
-	@Override
+
 	public void run() {
 		while(buff.getNClientes()>0) {
-			Mensaje m = buff.retirar();
-			
+			try {
+				Mensaje m = buff.retirar();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
