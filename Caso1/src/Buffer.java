@@ -8,8 +8,8 @@ public class Buffer {
 	private static int capacidad;
 	private static int NClientes;
 	private ArrayList<Mensaje> mensajes = new ArrayList<>();
-	private Object servidores;
-	private Object clientes;
+	private Object servidores = new Object();
+	private Object clientes = new Object();
 	
 	public void almacenar(Mensaje men) throws InterruptedException {
 		synchronized (clientes) {
@@ -45,7 +45,7 @@ public class Buffer {
 	}
 
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		
 		Cliente[] clientes;
 		Servidor[] servidores;
@@ -60,7 +60,7 @@ public class Buffer {
 		int i = Integer.parseInt(br.readLine());
 		servidores = new Servidor[i];
 		for (int j = 0; j < i; j++) {
-			servidores[j]=new Servidor(buff);
+			servidores[j]=new Servidor(buff,j);
 			servidores[j].start();
 		}
 		br.readLine();
@@ -69,9 +69,15 @@ public class Buffer {
 		br.readLine();
 		int j = 0;
 		for (String s : br.readLine().split(",")) {
-			clientes[j]=new Cliente(Integer.parseInt(s),buff);
+			clientes[j]=new Cliente(Integer.parseInt(s),buff,j);
 			clientes[j].start();
 			j++;
+		}
+		for (Servidor servidor : servidores) {
+			servidor.join();
+		}
+		for (Cliente cliente : clientes) {
+			cliente.join();
 		}
 		br.close();
 	}

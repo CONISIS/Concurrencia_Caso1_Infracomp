@@ -15,7 +15,7 @@ public class Mensaje{
 		public void setMensaje(int mensaje) {
 			this.mensaje = mensaje;
 		}
-		public void irse() {
+		public void mandar() {
 			try {
 				buff.almacenar(this);
 			} catch (InterruptedException e) {
