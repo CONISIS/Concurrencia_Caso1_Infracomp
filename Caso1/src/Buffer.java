@@ -31,20 +31,20 @@ public class Buffer {
 				Thread.yield();
 				Thread.sleep(400);
 			}
-			try
+			Mensaje m = null;
+			
+			// no entiendo cómo, pero al final llegan acá aún cuando no hay clientes y por eso
+			// hago esta verificación.
+			if (NClientes > 0)
 			{
-				Mensaje m;
 				m = mensajes.remove(0);
 				capacidad++;
-				return m;
-			}
-			finally
-			{
 				synchronized (clientes) {
 					clientes.notify();
 				}
-				System.out.println("salió un mensaje, mi capacidad es: " + capacidad);
-			}	
+			}
+			System.out.println("salió un mensaje, mi capacidad es: " + capacidad);
+			return m;
 		}
 	}
 
