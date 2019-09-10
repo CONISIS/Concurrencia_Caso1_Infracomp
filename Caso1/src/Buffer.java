@@ -2,50 +2,74 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Buffer {
-	private static int capacidad;
-	private static int NClientes;
-	private ArrayList<Mensaje> mensajes = new ArrayList<>();
-	private Object servidores = new Object();
-	private Object clientes = new Object();
+	private int capacidad;
+	private int NClientes;
+	private LinkedList<Mensaje> mensajes;
 
-	public void almacenar(Mensaje men) throws InterruptedException {
-		synchronized (clientes) {
-			System.out.println("Va a entrar un mensaje, mi capacidad es: " + capacidad);
-			while(capacidad<1) {clientes.wait();}
-		}
-		synchronized (this) {
-			mensajes.add(men);
-			capacidad--;
-			System.out.println("entró un mensaje, mi capacidad es: " + capacidad + " hay " + mensajes.size());
-		}
+	public Buffer (int capacidad, int clientes)
+	{
+		this.capacidad = capacidad;
+		NClientes = clientes;
+		mensajes = new LinkedList<>();
 	}
 
-	public Mensaje retirar() throws InterruptedException {
-		synchronized (servidores) {
-			System.out.println("va a salir un mensaje, mi capacidad es: " + capacidad);
-			while(mensajes.isEmpty() && NClientes > 0)
+	public void almacenar(Mensaje men) throws InterruptedException
+	{
+		System.out.println("Va a entrar un mensaje, mi capacidad es: " + capacidad);
+		synchronized(this)
+		{
+			while(capacidad<1)
 			{
+				System.out.println("Alguién se durmió almacenando");
+				wait();
+				System.out.println("Alguién se despertó");
+			}
+		}
+		synchronized(this)
+		{
+			mensajes.add(men);
+			capacidad--;
+		}
+		System.out.println("entró un mensaje, mi capacidad es: " + capacidad);
+	}
+
+	public Mensaje retirar() throws InterruptedException
+	{
+		synchronized (this)
+		{
+			if (NClientes < 0)
+				return null;
+		}
+
+		System.out.println("va a salir un mensaje, mi capacidad es: " + capacidad);
+		synchronized (this)
+		{
+			while(mensajes.isEmpty())
+			{
+				System.out.println("Un servidor cedió su puesto");
 				Thread.yield();
 				Thread.sleep(400);
 			}
+		}
+
+		synchronized (this)
+		{
 			Mensaje m = null;
-			
-			// no entiendo cómo, pero al final llegan acá aún cuando no hay clientes y por eso
-			// hago esta verificación.
 			if (NClientes > 0)
 			{
-				m = mensajes.remove(0);
+				System.out.println("Un servidor sacará un mensaje");
+				m = mensajes.remove();
 				capacidad++;
-				synchronized (clientes) {
-					clientes.notify();
-				}
+				notify();
+				System.out.println("Un servidor despertó a alguien");
+				System.out.println("salió un mensaje, mi capacidad es: " + capacidad);
 			}
-			System.out.println("salió un mensaje, mi capacidad es: " + capacidad);
 			return m;
 		}
+
 	}
 
 	public synchronized int getNClientes() {
@@ -65,16 +89,14 @@ public class Buffer {
 
 		Cliente[] clientes;
 		Servidor[] servidores;
-		Buffer buff = new Buffer();
-
-
 		BufferedReader br = new BufferedReader(new FileReader(new File("parametros.txt")));
 		br.readLine();
 		br.readLine();
-		capacidad = Integer.parseInt(br.readLine());
+		int c = Integer.parseInt(br.readLine());
 		br.readLine();
-		NClientes = Integer.parseInt(br.readLine()); 
-		clientes = new Cliente[NClientes];
+		int n = Integer.parseInt(br.readLine());
+		Buffer buff = new Buffer(c,n);
+		clientes = new Cliente[n];
 		br.readLine();
 		int j = 0;
 		for (String s : br.readLine().split(",")) {
