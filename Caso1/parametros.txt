@@ -1,6 +1,6 @@
 CASO I
 CBuffer:
-2
+4
 NClientes:
 10
 Clientes:

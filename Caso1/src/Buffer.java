@@ -58,7 +58,7 @@ public class Buffer {
 		synchronized (this)
 		{
 			Mensaje m = null;
-			if (NClientes > 0)
+			if (NClientes > 0 && mensajes() > 0)
 			{
 				System.out.println("Un servidor sacará un mensaje");
 				m = mensajes.remove();
