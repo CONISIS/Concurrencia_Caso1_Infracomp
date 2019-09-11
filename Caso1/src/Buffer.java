@@ -2,70 +2,100 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Buffer {
-	private static int capacidad;
-	private static int NClientes;
-	private ArrayList<Mensaje> mensajes = new ArrayList<>();
-	private Object servidores = new Object();
-	private Object clientes = new Object();
-	
-	public void almacenar(Mensaje men) throws InterruptedException {
-		synchronized (clientes) {
-			while(capacidad<1) {clientes.wait();}
+	private int capacidad;
+	private int NClientes;
+	private LinkedList<Mensaje> mensajes;
+
+	public Buffer (int capacidad, int clientes)
+	{
+		this.capacidad = capacidad;
+		NClientes = clientes;
+		mensajes = new LinkedList<>();
+	}
+
+	public void almacenar(Mensaje men) throws InterruptedException
+	{
+		System.out.println("Va a entrar un mensaje, mi tamaño es: " + mensajes.size());
+
+		while(mensajes() >= capacidad)
+		{
+			System.out.println("Alguién se durmió almacenando");
+			synchronized(this)
+			{
+				wait();
+			}
+			System.out.println("Alguién se despertó");
 		}
-		synchronized (this) {
+
+		synchronized(this)
+		{
 			mensajes.add(men);
-			capacidad--;
+			System.out.println("entró un mensaje" + men + " , mi tamaño es: " + mensajes.size());
 		}
+		men.esperar();
 	}
-	
-	public Mensaje retirar() throws InterruptedException {
-		synchronized (servidores) {
-			while(mensajes.isEmpty()){Thread.yield();Thread.sleep(400);}			
+
+	public Mensaje retirar() throws InterruptedException
+	{
+		synchronized (this)
+		{
+			if (NClientes < 0)
+				return null;
 		}
-		Mensaje m;
-		synchronized (servidores) {
-			m = mensajes.remove(0);
-			capacidad++;
+
+		System.out.println("va a salir un mensaje, mi tamaño es: " + mensajes.size());
+
+		while(mensajes() == 0 && NClientes > 0)
+		{
+			System.out.println("Un servidor cedió su puesto");
+			Thread.yield();
+			Thread.sleep(400);
 		}
-		synchronized (clientes) {
-			clientes.notify();
+
+		synchronized (this)
+		{
+			Mensaje m = null;
+			if (NClientes > 0 && mensajes() > 0)
+			{
+				System.out.println("Un servidor sacará un mensaje");
+				m = mensajes.remove();
+				notify();
+				System.out.println("Un servidor despertó a alguien");
+				System.out.println("salió un mensaje " + m + " , mi tamaño es: " + capacidad);
+			}
+			return m;
 		}
-		return m;
+
 	}
-	
+
 	public synchronized int getNClientes() {
 		return NClientes;
 	}
-	
+
 	public synchronized void salir() {
 		NClientes--;
 	}
 
-	
+	public synchronized int mensajes()
+	{
+		return mensajes.size();
+	}
+
 	public static void main(String[] args) throws IOException, InterruptedException {
-		
+
 		Cliente[] clientes;
 		Servidor[] servidores;
-		Buffer buff = new Buffer();
-		
-		
 		BufferedReader br = new BufferedReader(new FileReader(new File("parametros.txt")));
 		br.readLine();
 		br.readLine();
-		capacidad = Integer.parseInt(br.readLine());
+		int c = Integer.parseInt(br.readLine());
 		br.readLine();
-		int i = Integer.parseInt(br.readLine());
-		servidores = new Servidor[i];
-		for (int j = 0; j < i; j++) {
-			servidores[j]=new Servidor(buff,j);
-			servidores[j].start();
-		}
-		br.readLine();
-		NClientes = Integer.parseInt(br.readLine()); 
-		clientes = new Cliente[NClientes];
+		int n = Integer.parseInt(br.readLine());
+		Buffer buff = new Buffer(c,n);
+		clientes = new Cliente[n];
 		br.readLine();
 		int j = 0;
 		for (String s : br.readLine().split(",")) {
@@ -73,11 +103,18 @@ public class Buffer {
 			clientes[j].start();
 			j++;
 		}
-		for (Servidor servidor : servidores) {
-			servidor.join();
+		br.readLine();
+		int i = Integer.parseInt(br.readLine());
+		servidores = new Servidor[i];
+		for (int k = 0; k < i; k++) {
+			servidores[k]=new Servidor(buff,k);
+			servidores[k].start();
 		}
 		for (Cliente cliente : clientes) {
 			cliente.join();
+		}
+		for (Servidor servidor : servidores) {
+			servidor.join();
 		}
 		br.close();
 	}
