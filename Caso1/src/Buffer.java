@@ -18,22 +18,24 @@ public class Buffer {
 
 	public void almacenar(Mensaje men) throws InterruptedException
 	{
-		System.out.println("Va a entrar un mensaje, mi capacidad es: " + capacidad);
-		synchronized(this)
+		System.out.println("Va a entrar un mensaje, mi tamaño es: " + mensajes.size());
+
+		while(mensajes() >= capacidad)
 		{
-			while(capacidad<1)
+			System.out.println("Alguién se durmió almacenando");
+			synchronized(this)
 			{
-				System.out.println("Alguién se durmió almacenando");
 				wait();
-				System.out.println("Alguién se despertó");
 			}
+			System.out.println("Alguién se despertó");
 		}
+
 		synchronized(this)
 		{
 			mensajes.add(men);
-			capacidad--;
+			System.out.println("entró un mensaje" + men + " , mi tamaño es: " + mensajes.size());
 		}
-		System.out.println("entró un mensaje, mi capacidad es: " + capacidad);
+		men.esperar();
 	}
 
 	public Mensaje retirar() throws InterruptedException
@@ -44,15 +46,13 @@ public class Buffer {
 				return null;
 		}
 
-		System.out.println("va a salir un mensaje, mi capacidad es: " + capacidad);
-		synchronized (this)
+		System.out.println("va a salir un mensaje, mi tamaño es: " + mensajes.size());
+
+		while(mensajes() == 0 && NClientes > 0)
 		{
-			while(mensajes.isEmpty())
-			{
-				System.out.println("Un servidor cedió su puesto");
-				Thread.yield();
-				Thread.sleep(400);
-			}
+			System.out.println("Un servidor cedió su puesto");
+			Thread.yield();
+			Thread.sleep(400);
 		}
 
 		synchronized (this)
@@ -62,10 +62,9 @@ public class Buffer {
 			{
 				System.out.println("Un servidor sacará un mensaje");
 				m = mensajes.remove();
-				capacidad++;
 				notify();
 				System.out.println("Un servidor despertó a alguien");
-				System.out.println("salió un mensaje, mi capacidad es: " + capacidad);
+				System.out.println("salió un mensaje " + m + " , mi tamaño es: " + capacidad);
 			}
 			return m;
 		}

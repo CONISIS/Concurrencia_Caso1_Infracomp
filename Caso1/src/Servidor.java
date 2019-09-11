@@ -11,15 +11,12 @@ public class Servidor extends Thread{
 				Mensaje m = buff.retirar();
 				if (m != null)
 				{
-					System.out.println("El servidor " + id + " retiró un mensaje");
+					System.out.println("El servidor " + id + " retiró un mensaje " + m);
 					m.setMensaje(m.getMensaje()+1);
 					cont ++;
-					synchronized (m)
-					{
-						m.notify();
-					}	
+					m.despertar();
 				}
-				
+
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

@@ -1,10 +1,10 @@
 CASO I
 CBuffer:
-5
+2
 NClientes:
 10
 Clientes:
 9,10,5,8,7,5,6,7,9,10
 NServidores:
-5
+3
 Fin
